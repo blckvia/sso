@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
+	app "sso/internal/app"
 	"sso/internal/config"
 	"sso/internal/lib/logger/handlers/slogpretty"
 )
@@ -17,11 +17,13 @@ const (
 func main() {
 	cfg := config.MustLoad()
 
-	fmt.Println(cfg)
-
 	log := setupLogger(cfg.Env)
 
 	log.Info("starting application,", slog.Any("config", cfg))
+
+	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
+
+	application.GRPCSrv.MustRun()
 
 }
 
