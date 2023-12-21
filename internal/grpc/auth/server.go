@@ -44,7 +44,19 @@ func (s *ServerAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.
 }
 
 func (s *ServerAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*ssov1.RegisterResponse, error) {
-	panic("implement me")
+	if err := validateRegister(req); err != nil {
+		return nil, err
+	}
+
+	userId, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), req.GetPassword())
+	if err != nil {
+		// TODO: check if user already exists etc...
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &ssov1.RegisterResponse{
+		UserId: userId,
+	}, nil
 }
 
 func (s *ServerAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ssov1.IsAdminResponse, error) {
@@ -62,6 +74,18 @@ func validateLogin(req *ssov1.LoginRequest) error {
 
 	if req.GetAppId() == emptyValue {
 		return status.Error(codes.InvalidArgument, "app_id is required")
+	}
+
+	return nil
+}
+
+func validateRegister(req *ssov1.RegisterRequest) error {
+	if req.GetEmail() == "" {
+		return status.Error(codes.InvalidArgument, "email is required")
+	}
+
+	if req.GetPassword() == "" {
+		return status.Error(codes.InvalidArgument, "password is required")
 	}
 
 	return nil
